@@ -21,6 +21,19 @@ pipeline {
                 '''
             }
         }
+	stage('Deploy Application') {
+            steps {
+                echo 'Deploying FastAPI application...'
+                // The > /dev/null 2>&1 completely detaches the console output so Jenkins doesn't hang!
+                sh '''
+                    . venv/bin/activate
+                    pkill uvicorn || true
+                    nohup uvicorn main:app --host 0.0.0.0 --port 8000 > /dev/null 2>&1 &
+                '''
+            }
+        }
+
+
     }
 }
 

@@ -21,17 +21,28 @@ pipeline {
                 '''
             }
         }
-	stage('Deploy Application') {
+        stage('Deploy Application') {
             steps {
-                echo 'Deploying FastAPI application...'
-                // The > /dev/null 2>&1 completely detaches the console output so Jenkins doesn't hang!
+                echo 'Deploying FastAPI application securely...'
                 sh '''
+                    # 1. Enter environment
                     . venv/bin/activate
+                    
+                    # 2. Stop any old running instance cleanly
                     pkill uvicorn || true
-                    nohup uvicorn main:app --host 0.0.0.0 --port 8000 > /dev/null 2>&1 &
+                    
+                    # 3. CRUCIAL: Protect the process from the Jenkins Process Tree Killer
+                    export JENKINS_NODE_COOKIE=dontKillMe
+                    
+                    # 4. Fire up uvicorn in the background using direct workspace log anchoring
+                    nohup uvicorn main:app --host 0.0.0.0 --port 8000 > "${WORKSPACE}/uvicorn.log" 2>&1 &
+                    
+                    # 5. Let Jenkins pause momentarily to ensure it didn't immediate crash
+                    sleep 3
                 '''
             }
         }
+	
 
 
     }
